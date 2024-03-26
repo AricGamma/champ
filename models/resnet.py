@@ -48,7 +48,8 @@ class Upsample3D(nn.Module):
         if use_conv_transpose:
             raise NotImplementedError
         elif use_conv:
-            self.conv = InflatedConv3d(self.channels, self.out_channels, 3, padding=1)
+            self.conv = InflatedConv3d(
+                self.channels, self.out_channels, 3, padding=1)
 
     def forward(self, hidden_states, output_size=None):
         assert hidden_states.shape[1] == self.channels
@@ -223,7 +224,8 @@ class ResnetBlock3D(nn.Module):
         hidden_states = self.conv1(hidden_states)
 
         if temb is not None:
-            temb = self.time_emb_proj(self.nonlinearity(temb))[:, :, None, None, None]
+            temb = self.time_emb_proj(self.nonlinearity(temb))[
+                :, :, None, None, None]
 
         if temb is not None and self.time_embedding_norm == "default":
             hidden_states = hidden_states + temb
@@ -242,7 +244,8 @@ class ResnetBlock3D(nn.Module):
         if self.conv_shortcut is not None:
             input_tensor = self.conv_shortcut(input_tensor)
 
-        output_tensor = (input_tensor + hidden_states) / self.output_scale_factor
+        output_tensor = (input_tensor + hidden_states) / \
+            self.output_scale_factor
 
         return output_tensor
 

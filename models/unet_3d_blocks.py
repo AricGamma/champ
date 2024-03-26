@@ -6,7 +6,6 @@ import torch
 from torch import nn
 
 from .motion_module import get_motion_module
-
 # from .motion_module import get_motion_module
 from .resnet import Downsample3D, ResnetBlock3D, Upsample3D
 from .transformer_3d import Transformer3DModel
@@ -117,7 +116,8 @@ def get_up_block(
     motion_module_kwargs=None,
 ):
     up_block_type = (
-        up_block_type[7:] if up_block_type.startswith("UNetRes") else up_block_type
+        up_block_type[7:] if up_block_type.startswith(
+            "UNetRes") else up_block_type
     )
     if up_block_type == "UpBlock3D":
         return UpBlock3D(
@@ -198,7 +198,8 @@ class UNetMidBlock3DCrossAttn(nn.Module):
         self.has_cross_attention = True
         self.attn_num_head_channels = attn_num_head_channels
         resnet_groups = (
-            resnet_groups if resnet_groups is not None else min(in_channels // 4, 32)
+            resnet_groups if resnet_groups is not None else min(
+                in_channels // 4, 32)
         )
 
         # there is always at least one resnet
@@ -621,7 +622,8 @@ class CrossAttnUpBlock3D(nn.Module):
         self.attn_num_head_channels = attn_num_head_channels
 
         for i in range(num_layers):
-            res_skip_channels = in_channels if (i == num_layers - 1) else out_channels
+            res_skip_channels = in_channels if (
+                i == num_layers - 1) else out_channels
             resnet_in_channels = prev_output_channel if i == 0 else out_channels
 
             resnets.append(
@@ -672,7 +674,8 @@ class CrossAttnUpBlock3D(nn.Module):
 
         if add_upsample:
             self.upsamplers = nn.ModuleList(
-                [Upsample3D(out_channels, use_conv=True, out_channels=out_channels)]
+                [Upsample3D(out_channels, use_conv=True,
+                            out_channels=out_channels)]
             )
         else:
             self.upsamplers = None
@@ -694,7 +697,8 @@ class CrossAttnUpBlock3D(nn.Module):
             # pop res hidden states
             res_hidden_states = res_hidden_states_tuple[-1]
             res_hidden_states_tuple = res_hidden_states_tuple[:-1]
-            hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
+            hidden_states = torch.cat(
+                [hidden_states, res_hidden_states], dim=1)
 
             if self.training and self.gradient_checkpointing:
 
@@ -772,7 +776,8 @@ class UpBlock3D(nn.Module):
 
         # use_motion_module = False
         for i in range(num_layers):
-            res_skip_channels = in_channels if (i == num_layers - 1) else out_channels
+            res_skip_channels = in_channels if (
+                i == num_layers - 1) else out_channels
             resnet_in_channels = prev_output_channel if i == 0 else out_channels
 
             resnets.append(
@@ -805,7 +810,8 @@ class UpBlock3D(nn.Module):
 
         if add_upsample:
             self.upsamplers = nn.ModuleList(
-                [Upsample3D(out_channels, use_conv=True, out_channels=out_channels)]
+                [Upsample3D(out_channels, use_conv=True,
+                            out_channels=out_channels)]
             )
         else:
             self.upsamplers = None
@@ -824,7 +830,8 @@ class UpBlock3D(nn.Module):
             # pop res hidden states
             res_hidden_states = res_hidden_states_tuple[-1]
             res_hidden_states_tuple = res_hidden_states_tuple[:-1]
-            hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
+            hidden_states = torch.cat(
+                [hidden_states, res_hidden_states], dim=1)
 
             # print(f"UpBlock3D {self.gradient_checkpointing = }")
             if self.training and self.gradient_checkpointing:

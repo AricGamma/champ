@@ -58,7 +58,8 @@ class BasicTransformerBlock(nn.Module):
         double_self_attention: bool = False,
         upcast_attention: bool = False,
         norm_elementwise_affine: bool = True,
-        norm_type: str = "layer_norm",  # 'layer_norm', 'ada_norm', 'ada_norm_zero', 'ada_norm_single'
+        # 'layer_norm', 'ada_norm', 'ada_norm_zero', 'ada_norm_single'
+        norm_type: str = "layer_norm",
         norm_eps: float = 1e-5,
         final_dropout: bool = False,
         attention_type: str = "default",
@@ -130,9 +131,9 @@ class BasicTransformerBlock(nn.Module):
             )
             self.attn2 = Attention(
                 query_dim=dim,
-                cross_attention_dim=cross_attention_dim
-                if not double_self_attention
-                else None,
+                cross_attention_dim=(
+                    cross_attention_dim if not double_self_attention else None
+                ),
                 heads=num_attention_heads,
                 dim_head=attention_head_dim,
                 dropout=dropout,
@@ -164,7 +165,8 @@ class BasicTransformerBlock(nn.Module):
 
         # 5. Scale-shift for PixArt-Alpha.
         if self.use_ada_layer_norm_single:
-            self.scale_shift_table = nn.Parameter(torch.randn(6, dim) / dim**0.5)
+            self.scale_shift_table = nn.Parameter(
+                torch.randn(6, dim) / dim**0.5)
 
         # let chunk size default to None
         self._chunk_size = None
@@ -199,10 +201,12 @@ class BasicTransformerBlock(nn.Module):
             norm_hidden_states = self.norm1(hidden_states)
         elif self.use_ada_layer_norm_single:
             shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
-                self.scale_shift_table[None] + timestep.reshape(batch_size, 6, -1)
+                self.scale_shift_table[None] +
+                timestep.reshape(batch_size, 6, -1)
             ).chunk(6, dim=1)
             norm_hidden_states = self.norm1(hidden_states)
-            norm_hidden_states = norm_hidden_states * (1 + scale_msa) + shift_msa
+            norm_hidden_states = norm_hidden_states * \
+                (1 + scale_msa) + shift_msa
             norm_hidden_states = norm_hidden_states.squeeze(1)
         else:
             raise ValueError("Incorrect norm used")
@@ -225,9 +229,9 @@ class BasicTransformerBlock(nn.Module):
 
         attn_output = self.attn1(
             norm_hidden_states,
-            encoder_hidden_states=encoder_hidden_states
-            if self.only_cross_attention
-            else None,
+            encoder_hidden_states=(
+                encoder_hidden_states if self.only_cross_attention else None
+            ),
             attention_mask=attention_mask,
             **cross_attention_kwargs,
         )
@@ -274,12 +278,14 @@ class BasicTransformerBlock(nn.Module):
 
         if self.use_ada_layer_norm_zero:
             norm_hidden_states = (
-                norm_hidden_states * (1 + scale_mlp[:, None]) + shift_mlp[:, None]
+                norm_hidden_states *
+                (1 + scale_mlp[:, None]) + shift_mlp[:, None]
             )
 
         if self.use_ada_layer_norm_single:
             norm_hidden_states = self.norm2(hidden_states)
-            norm_hidden_states = norm_hidden_states * (1 + scale_mlp) + shift_mlp
+            norm_hidden_states = norm_hidden_states * \
+                (1 + scale_mlp) + shift_mlp
 
         ff_output = self.ff(norm_hidden_states, scale=lora_scale)
 
@@ -356,7 +362,8 @@ class TemporalBasicTransformerBlock(nn.Module):
             self.norm2 = None
 
         # Feed-forward
-        self.ff = FeedForward(dim, dropout=dropout, activation_fn=activation_fn)
+        self.ff = FeedForward(dim, dropout=dropout,
+                              activation_fn=activation_fn)
         self.norm3 = nn.LayerNorm(dim)
         self.use_ada_layer_norm_zero = False
 
@@ -438,6 +445,7 @@ class TemporalBasicTransformerBlock(nn.Module):
                 else self.norm_temp(hidden_states)
             )
             hidden_states = self.attn_temp(norm_hidden_states) + hidden_states
-            hidden_states = rearrange(hidden_states, "(b d) f c -> (b f) d c", d=d)
+            hidden_states = rearrange(
+                hidden_states, "(b d) f c -> (b f) d c", d=d)
 
         return hidden_states

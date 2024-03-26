@@ -13,11 +13,13 @@ from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.models.attention_processor import AttentionProcessor
 from diffusers.models.embeddings import TimestepEmbedding, Timesteps
 from diffusers.models.modeling_utils import ModelMixin
-from diffusers.utils import SAFETENSORS_WEIGHTS_NAME, WEIGHTS_NAME, BaseOutput, logging
+from diffusers.utils import (SAFETENSORS_WEIGHTS_NAME, WEIGHTS_NAME,
+                             BaseOutput, logging)
 from safetensors.torch import load_file
 
 from .resnet import InflatedConv3d, InflatedGroupNorm
-from .unet_3d_blocks import UNetMidBlock3DCrossAttn, get_down_block, get_up_block
+from .unet_3d_blocks import (UNetMidBlock3DCrossAttn, get_down_block,
+                             get_up_block)
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -90,16 +92,20 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         )
 
         # time
-        self.time_proj = Timesteps(block_out_channels[0], flip_sin_to_cos, freq_shift)
+        self.time_proj = Timesteps(
+            block_out_channels[0], flip_sin_to_cos, freq_shift)
         timestep_input_dim = block_out_channels[0]
 
-        self.time_embedding = TimestepEmbedding(timestep_input_dim, time_embed_dim)
+        self.time_embedding = TimestepEmbedding(
+            timestep_input_dim, time_embed_dim)
 
         # class embedding
         if class_embed_type is None and num_class_embeds is not None:
-            self.class_embedding = nn.Embedding(num_class_embeds, time_embed_dim)
+            self.class_embedding = nn.Embedding(
+                num_class_embeds, time_embed_dim)
         elif class_embed_type == "timestep":
-            self.class_embedding = TimestepEmbedding(timestep_input_dim, time_embed_dim)
+            self.class_embedding = TimestepEmbedding(
+                timestep_input_dim, time_embed_dim)
         elif class_embed_type == "identity":
             self.class_embedding = nn.Identity(time_embed_dim, time_embed_dim)
         else:
@@ -110,7 +116,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         self.up_blocks = nn.ModuleList([])
 
         if isinstance(only_cross_attention, bool):
-            only_cross_attention = [only_cross_attention] * len(down_block_types)
+            only_cross_attention = [
+                only_cross_attention] * len(down_block_types)
 
         if isinstance(attention_head_dim, int):
             attention_head_dim = (attention_head_dim,) * len(down_block_types)
@@ -270,7 +277,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
 
             for sub_name, child in module.named_children():
                 if "temporal_transformer" not in sub_name:
-                    fn_recursive_add_processors(f"{name}.{sub_name}", child, processors)
+                    fn_recursive_add_processors(
+                        f"{name}.{sub_name}", child, processors)
 
             return processors
 
@@ -333,7 +341,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
             size = slice_size[i]
             dim = sliceable_head_dims[i]
             if size is not None and size > dim:
-                raise ValueError(f"size {size} has to be smaller or equal to {dim}.")
+                raise ValueError(
+                    f"size {size} has to be smaller or equal to {dim}.")
 
         # Recursively walk through all the children.
         # Any children which exposes the set_attention_slice method
@@ -388,7 +397,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
 
             for sub_name, child in module.named_children():
                 if "temporal_transformer" not in sub_name:
-                    fn_recursive_attn_processor(f"{name}.{sub_name}", child, processor)
+                    fn_recursive_attn_processor(
+                        f"{name}.{sub_name}", child, processor)
 
         for name, module in self.named_children():
             if "temporal_transformer" not in name:
@@ -430,7 +440,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         upsample_size = None
 
         if any(s % default_overall_up_factor != 0 for s in sample.shape[-2:]):
-            logger.info("Forward upsample size to force interpolation output size.")
+            logger.info(
+                "Forward upsample size to force interpolation output size.")
             forward_upsample_size = True
 
         # prepare attention_mask
@@ -451,7 +462,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
                 dtype = torch.float32 if is_mps else torch.float64
             else:
                 dtype = torch.int32 if is_mps else torch.int64
-            timesteps = torch.tensor([timesteps], dtype=dtype, device=sample.device)
+            timesteps = torch.tensor(
+                [timesteps], dtype=dtype, device=sample.device)
         elif len(timesteps.shape) == 0:
             timesteps = timesteps[None].to(sample.device)
 
@@ -533,7 +545,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         for i, upsample_block in enumerate(self.up_blocks):
             is_final_block = i == len(self.up_blocks) - 1
 
-            res_samples = down_block_res_samples[-len(upsample_block.resnets) :]
+            res_samples = down_block_res_samples[-len(upsample_block.resnets):]
             down_block_res_samples = down_block_res_samples[
                 : -len(upsample_block.resnets)
             ]
@@ -593,7 +605,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
 
         config_file = pretrained_model_path / "config.json"
         if not (config_file.exists() and config_file.is_file()):
-            raise RuntimeError(f"{config_file} does not exist or is not a file")
+            raise RuntimeError(
+                f"{config_file} does not exist or is not a file")
 
         unet_config = cls.load_config(config_file)
         unet_config["_class_name"] = cls.__name__
@@ -629,12 +642,14 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
                 weights_only=True,
             )
         else:
-            raise FileNotFoundError(f"no weights file found in {pretrained_model_path}")
+            raise FileNotFoundError(
+                f"no weights file found in {pretrained_model_path}")
 
         # load the motion module weights
         if motion_module_path.exists() and motion_module_path.is_file():
             if motion_module_path.suffix.lower() in [".pth", ".pt", ".ckpt"]:
-                logger.info(f"Load motion module params from {motion_module_path}")
+                logger.info(
+                    f"Load motion module params from {motion_module_path}")
                 motion_state_dict = torch.load(
                     motion_module_path, map_location="cpu", weights_only=True
                 )
@@ -645,7 +660,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
                     f"unknown file format for motion module weights: {motion_module_path.suffix}"
                 )
             if mm_zero_proj_out:
-                logger.info(f"Zero initialize proj_out layers in motion module...")
+                logger.info(
+                    f"Zero initialize proj_out layers in motion module...")
                 new_motion_state_dict = OrderedDict()
                 for k in motion_state_dict:
                     if "proj_out" in k:
@@ -658,7 +674,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
 
         # load the weights into the model
         m, u = model.load_state_dict(state_dict, strict=False)
-        logger.debug(f"### missing keys: {len(m)}; \n### unexpected keys: {len(u)};")
+        logger.debug(
+            f"### missing keys: {len(m)}; \n### unexpected keys: {len(u)};")
 
         params = [
             p.numel() if "temporal" in n else 0 for n, p in model.named_parameters()

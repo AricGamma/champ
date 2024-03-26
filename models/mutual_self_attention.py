@@ -127,9 +127,9 @@ class ReferenceAttentionControl:
             if self.only_cross_attention:
                 attn_output = self.attn1(
                     norm_hidden_states,
-                    encoder_hidden_states=encoder_hidden_states
-                    if self.only_cross_attention
-                    else None,
+                    encoder_hidden_states=(
+                        encoder_hidden_states if self.only_cross_attention else None
+                    ),
                     attention_mask=attention_mask,
                     **cross_attention_kwargs,
                 )
@@ -138,9 +138,9 @@ class ReferenceAttentionControl:
                     self.bank.append(norm_hidden_states.clone())
                     attn_output = self.attn1(
                         norm_hidden_states,
-                        encoder_hidden_states=encoder_hidden_states
-                        if self.only_cross_attention
-                        else None,
+                        encoder_hidden_states=(
+                            encoder_hidden_states if self.only_cross_attention else None
+                        ),
                         attention_mask=attention_mask,
                         **cross_attention_kwargs,
                     )
@@ -205,7 +205,8 @@ class ReferenceAttentionControl:
                         )
 
                     # Feed-forward
-                    hidden_states = self.ff(self.norm3(hidden_states)) + hidden_states
+                    hidden_states = self.ff(self.norm3(
+                        hidden_states)) + hidden_states
 
                     # Temporal-Attention
                     if self.unet_use_temporal_attention:
@@ -252,7 +253,8 @@ class ReferenceAttentionControl:
 
             if self.use_ada_layer_norm_zero:
                 norm_hidden_states = (
-                    norm_hidden_states * (1 + scale_mlp[:, None]) + shift_mlp[:, None]
+                    norm_hidden_states *
+                    (1 + scale_mlp[:, None]) + shift_mlp[:, None]
                 )
 
             ff_output = self.ff(norm_hidden_states)
@@ -269,7 +271,8 @@ class ReferenceAttentionControl:
                 attn_modules = [
                     module
                     for module in (
-                        torch_dfs(self.unet.mid_block) + torch_dfs(self.unet.up_blocks)
+                        torch_dfs(self.unet.mid_block) +
+                        torch_dfs(self.unet.up_blocks)
                     )
                     if isinstance(module, BasicTransformerBlock)
                     or isinstance(module, TemporalBasicTransformerBlock)
@@ -305,7 +308,8 @@ class ReferenceAttentionControl:
                 reader_attn_modules = [
                     module
                     for module in (
-                        torch_dfs(self.unet.mid_block) + torch_dfs(self.unet.up_blocks)
+                        torch_dfs(self.unet.mid_block) +
+                        torch_dfs(self.unet.up_blocks)
                     )
                     if isinstance(module, TemporalBasicTransformerBlock)
                 ]
@@ -344,7 +348,8 @@ class ReferenceAttentionControl:
                 reader_attn_modules = [
                     module
                     for module in (
-                        torch_dfs(self.unet.mid_block) + torch_dfs(self.unet.up_blocks)
+                        torch_dfs(self.unet.mid_block) +
+                        torch_dfs(self.unet.up_blocks)
                     )
                     if isinstance(module, BasicTransformerBlock)
                     or isinstance(module, TemporalBasicTransformerBlock)
