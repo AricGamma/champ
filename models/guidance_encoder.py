@@ -36,8 +36,7 @@ class GuidanceEncoder(ModelMixin):
             channel_out = block_out_channels[i + 1]
 
             self.blocks.append(
-                InflatedConv3d(channel_in, channel_in,
-                               kernel_size=3, padding=1)
+                InflatedConv3d(channel_in, channel_in, kernel_size=3, padding=1)
             )
             self.attentions.append(
                 Transformer3DModel(

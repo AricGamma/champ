@@ -212,8 +212,7 @@ class TemporalTransformerBlock(nn.Module):
                 VersatileAttention(
                     attention_mode=block_name.split("_")[0],
                     cross_attention_dim=(
-                        cross_attention_dim if block_name.endswith(
-                            "_Cross") else None
+                        cross_attention_dim if block_name.endswith("_Cross") else None
                     ),
                     query_dim=dim,
                     heads=num_attention_heads,
@@ -231,8 +230,7 @@ class TemporalTransformerBlock(nn.Module):
         self.attention_blocks = nn.ModuleList(attention_blocks)
         self.norms = nn.ModuleList(norms)
 
-        self.ff = FeedForward(dim, dropout=dropout,
-                              activation_fn=activation_fn)
+        self.ff = FeedForward(dim, dropout=dropout, activation_fn=activation_fn)
         self.ff_norm = nn.LayerNorm(dim)
 
     def forward(
@@ -387,7 +385,6 @@ class VersatileAttention(Attention):
         )
 
         if self.attention_mode == "Temporal":
-            hidden_states = rearrange(
-                hidden_states, "(b d) f c -> (b f) d c", d=d)
+            hidden_states = rearrange(hidden_states, "(b d) f c -> (b f) d c", d=d)
 
         return hidden_states

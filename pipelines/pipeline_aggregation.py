@@ -8,10 +8,14 @@ import numpy as np
 import torch
 from diffusers import DiffusionPipeline
 from diffusers.image_processor import VaeImageProcessor
-from diffusers.schedulers import (DDIMScheduler, DPMSolverMultistepScheduler,
-                                  EulerAncestralDiscreteScheduler,
-                                  EulerDiscreteScheduler, LMSDiscreteScheduler,
-                                  PNDMScheduler)
+from diffusers.schedulers import (
+    DDIMScheduler,
+    DPMSolverMultistepScheduler,
+    EulerAncestralDiscreteScheduler,
+    EulerDiscreteScheduler,
+    LMSDiscreteScheduler,
+    PNDMScheduler,
+)
 from diffusers.utils import BaseOutput, is_accelerate_available
 from diffusers.utils.torch_utils import randn_tensor
 from einops import rearrange
@@ -69,8 +73,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
             tokenizer=tokenizer,
             text_encoder=text_encoder,
         )
-        self.vae_scale_factor = 2 ** (
-            len(self.vae.config.block_out_channels) - 1)
+        self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.clip_image_processor = CLIPImageProcessor()
         self.ref_image_processor = VaeImageProcessor(
             vae_scale_factor=self.vae_scale_factor, do_convert_rgb=True
@@ -91,8 +94,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
         if is_accelerate_available():
             from accelerate import cpu_offload
         else:
-            raise ImportError(
-                "Please install accelerate via `pip install accelerate`")
+            raise ImportError("Please install accelerate via `pip install accelerate`")
 
         device = torch.device(f"cuda:{gpu_id}")
 
@@ -120,8 +122,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
         # video = self.vae.decode(latents).sample
         video = []
         for frame_idx in tqdm(range(latents.shape[0])):
-            video.append(self.vae.decode(
-                latents[frame_idx: frame_idx + 1]).sample)
+            video.append(self.vae.decode(latents[frame_idx : frame_idx + 1]).sample)
         video = torch.cat(video)
         video = rearrange(video, "(b f) c h w -> b c f h w", f=video_length)
         video = (video / 2 + 0.5).clamp(0, 1)
@@ -212,7 +213,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
             text_input_ids, untruncated_ids
         ):
             removed_text = self.tokenizer.batch_decode(
-                untruncated_ids[:, self.tokenizer.model_max_length - 1: -1]
+                untruncated_ids[:, self.tokenizer.model_max_length - 1 : -1]
             )
 
         if (
@@ -282,8 +283,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
 
             # duplicate unconditional embeddings for each generation per prompt, using mps friendly method
             seq_len = uncond_embeddings.shape[1]
-            uncond_embeddings = uncond_embeddings.repeat(
-                1, num_videos_per_prompt, 1)
+            uncond_embeddings = uncond_embeddings.repeat(1, num_videos_per_prompt, 1)
             uncond_embeddings = uncond_embeddings.view(
                 batch_size * num_videos_per_prompt, seq_len, -1
             )
@@ -314,8 +314,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
         )
 
         org_video_length = latents.shape[2]
-        rate = [
-            i / interpolation_factor for i in range(interpolation_factor)][1:]
+        rate = [i / interpolation_factor for i in range(interpolation_factor)][1:]
 
         new_index = 0
 
@@ -354,12 +353,10 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
         guidance_scale,
         num_images_per_prompt=1,
         eta: float = 0.0,
-        generator: Optional[Union[torch.Generator,
-                                  List[torch.Generator]]] = None,
+        generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
         output_type: Optional[str] = "tensor",
         return_dict: bool = True,
-        callback: Optional[Callable[[
-            int, int, torch.FloatTensor], None]] = None,
+        callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
         callback_steps: Optional[int] = 1,
         context_schedule="uniform",
         context_frames=24,
@@ -459,8 +456,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
         guidance_fea_lst = []
         for guidance_type, guidance_pil_lst in multi_guidance_group.items():
             guidance_tensor_lst = [
-                torch.from_numpy(
-                    np.array(guidance_image.resize((width, height))))
+                torch.from_numpy(np.array(guidance_image.resize((width, height))))
                 / 255.0
                 for guidance_image in guidance_pil_lst
             ]
@@ -469,10 +465,8 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
             )  # (c, f, h, w)
             guidance_tensor = guidance_tensor.unsqueeze(0)  # (1, c, f, h, w)
 
-            guidance_encoder = getattr(
-                self, f"guidance_encoder_{guidance_type}")
-            guidance_tensor = guidance_tensor.to(
-                device, guidance_encoder.dtype)
+            guidance_encoder = getattr(self, f"guidance_encoder_{guidance_type}")
+            guidance_tensor = guidance_tensor.to(device, guidance_encoder.dtype)
             guidance_fea_lst += [guidance_encoder(guidance_tensor)]
 
         guidance_fea = torch.stack(guidance_fea_lst).sum(0)
@@ -480,14 +474,12 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
         context_scheduler = get_context_scheduler(context_schedule)
 
         # denoising loop
-        num_warmup_steps = len(timesteps) - \
-            num_inference_steps * self.scheduler.order
+        num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 noise_pred = torch.zeros(
                     (
-                        latents.shape[0] *
-                        (2 if do_classifier_free_guidance else 1),
+                        latents.shape[0] * (2 if do_classifier_free_guidance else 1),
                         *latents.shape[1:],
                     ),
                     device=latents.device,
@@ -522,8 +514,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
                         0,
                     )
                 )
-                num_context_batches = math.ceil(
-                    len(context_queue) / context_batch_size)
+                num_context_batches = math.ceil(len(context_queue) / context_batch_size)
 
                 context_queue = list(
                     context_scheduler(
@@ -536,13 +527,12 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
                     )
                 )
 
-                num_context_batches = math.ceil(
-                    len(context_queue) / context_batch_size)
+                num_context_batches = math.ceil(len(context_queue) / context_batch_size)
                 global_context = []
                 for i in range(num_context_batches):
                     global_context.append(
                         context_queue[
-                            i * context_batch_size: (i + 1) * context_batch_size
+                            i * context_batch_size : (i + 1) * context_batch_size
                         ]
                     )
 
@@ -575,8 +565,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
 
                 # perform guidance
                 if do_classifier_free_guidance:
-                    noise_pred_uncond, noise_pred_text = (
-                        noise_pred / counter).chunk(2)
+                    noise_pred_uncond, noise_pred_text = (noise_pred / counter).chunk(2)
                     noise_pred = noise_pred_uncond + guidance_scale * (
                         noise_pred_text - noise_pred_uncond
                     )
@@ -586,8 +575,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
                 ).prev_sample
 
                 if i == len(timesteps) - 1 or (
-                    (i + 1) > num_warmup_steps and (i +
-                                                    1) % self.scheduler.order == 0
+                    (i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0
                 ):
                     progress_bar.update()
                     if callback is not None and i % callback_steps == 0:
@@ -598,8 +586,7 @@ class MultiGuidance2LongVideoPipeline(DiffusionPipeline):
             reference_control_writer.clear()
 
         if interpolation_factor > 0:
-            latents = self.interpolate_latents(
-                latents, interpolation_factor, device)
+            latents = self.interpolate_latents(latents, interpolation_factor, device)
         # Post-processing
         images = self.decode_latents(latents)  # (b, c, f, h, w)
 

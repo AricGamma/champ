@@ -63,8 +63,7 @@ def resize_tensor_frames(video_tensor, new_size):
     resized_frames = F.interpolate(
         video_tensor_reshaped, size=new_size, mode="bilinear", align_corners=False
     )
-    resized_video = resized_frames.reshape(
-        B, C, video_length, new_size[0], new_size[1])
+    resized_video = resized_frames.reshape(B, C, video_length, new_size[0], new_size[1])
 
     return resized_video
 

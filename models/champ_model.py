@@ -27,8 +27,7 @@ class ChampModel(nn.Module):
         for guidance_type, guidance_module in guidance_encoder_group.items():
             setattr(self, f"guidance_encoder_{guidance_type}", guidance_module)
             self.guidance_types.append(guidance_type)
-            self.guidance_input_channels.append(
-                guidance_module.guidance_input_channels)
+            self.guidance_input_channels.append(guidance_module.guidance_input_channels)
 
     def forward(
         self,

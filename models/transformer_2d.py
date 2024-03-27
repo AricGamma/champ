@@ -8,8 +8,7 @@ from diffusers.models.embeddings import CaptionProjection
 from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
 from diffusers.models.modeling_utils import ModelMixin
 from diffusers.models.normalization import AdaLayerNormSingle
-from diffusers.utils import (USE_PEFT_BACKEND, BaseOutput, deprecate,
-                             is_torch_version)
+from diffusers.utils import USE_PEFT_BACKEND, BaseOutput, deprecate, is_torch_version
 from torch import nn
 
 from .attention import BasicTransformerBlock
@@ -98,8 +97,7 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
 
         # 1. Transformer2DModel can process both standard continuous images of shape `(batch_size, num_channels, width, height)` as well as quantized image embeddings of shape `(batch_size, num_image_vectors)`
         # Define whether input is continuous or discrete depending on configuration
-        self.is_input_continuous = (
-            in_channels is not None) and (patch_size is None)
+        self.is_input_continuous = (in_channels is not None) and (patch_size is None)
         self.is_input_vectorized = num_vector_embeds is not None
         self.is_input_patches = in_channels is not None and patch_size is not None
 
@@ -277,8 +275,7 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
             #   (1 = keep,      0 = discard)
             # convert mask into a bias that can be added to attention scores:
             #       (keep = +0,     discard = -10000.0)
-            attention_mask = (
-                1 - attention_mask.to(hidden_states.dtype)) * -10000.0
+            attention_mask = (1 - attention_mask.to(hidden_states.dtype)) * -10000.0
             attention_mask = attention_mask.unsqueeze(1)
 
         # convert encoder_attention_mask to a bias the same way we do for attention_mask
@@ -324,8 +321,7 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
         # 2. Blocks
         if self.caption_projection is not None:
             batch_size = hidden_states.shape[0]
-            encoder_hidden_states = self.caption_projection(
-                encoder_hidden_states)
+            encoder_hidden_states = self.caption_projection(encoder_hidden_states)
             encoder_hidden_states = encoder_hidden_states.view(
                 batch_size, -1, hidden_states.shape[-1]
             )
@@ -344,8 +340,7 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
                     return custom_forward
 
                 ckpt_kwargs: Dict[str, Any] = (
-                    {"use_reentrant": False} if is_torch_version(
-                        ">=", "1.11.0") else {}
+                    {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
                 )
                 hidden_states = torch.utils.checkpoint.checkpoint(
                     create_custom_forward(block),

@@ -21,8 +21,7 @@ from models.mutual_self_attention import ReferenceAttentionControl
 from models.unet_2d_condition import UNet2DConditionModel
 from models.unet_3d import UNet3DConditionModel
 from pipelines.pipeline_aggregation import MultiGuidance2LongVideoPipeline
-from utils.video_utils import (pil_list_to_tensor, resize_tensor_frames,
-                               save_videos_grid)
+from utils.video_utils import pil_list_to_tensor, resize_tensor_frames, save_videos_grid
 
 
 def setup_savedir(cfg):
@@ -282,8 +281,7 @@ def main(cfg):
     guidance_video_tensor_lst = []
     for guidance_pil_lst in guidance_pil_group.values():
         guidance_video_tensor_lst += [
-            pil_list_to_tensor(guidance_pil_lst, size=(
-                ref_image_h, ref_image_w))
+            pil_list_to_tensor(guidance_pil_lst, size=(ref_image_h, ref_image_w))
         ]
     guidance_video_tensor = torch.stack(guidance_video_tensor_lst, dim=0)
 
@@ -293,8 +291,7 @@ def main(cfg):
     )
 
     save_videos_grid(grid_video, osp.join(save_dir, "grid.mp4"))
-    save_videos_grid(grid_video_wguidance, osp.join(
-        save_dir, "grid_wguidance.mp4"))
+    save_videos_grid(grid_video_wguidance, osp.join(save_dir, "grid_wguidance.mp4"))
 
     logging.info(f"Inference completed, results saved in {save_dir}")
 
@@ -302,8 +299,7 @@ def main(cfg):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str,
-                        default="./configs/inference.yaml")
+    parser.add_argument("--config", type=str, default="./configs/inference.yaml")
     args = parser.parse_args()
 
     if args.config[-5:] == ".yaml":
