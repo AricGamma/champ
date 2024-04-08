@@ -1,0 +1,3 @@
+[submodule "DWPose"]
+	path = DWPose
+	url = https://github.com/IDEA-Research/DWPose.git
