@@ -47,10 +47,12 @@ Try Champ with your dance videos! It may take time to setup the environment, fol
 
     You can download Blender 3.x version for your operation system from this url [https://download.blender.org/release/Blender3.6](https://download.blender.org/release/Blender3.6/).
 
-6. Pull [DWPose](https://github.com/IDEA-Research/DWPose) as git submodule
+6. Clone [DWPose](https://github.com/IDEA-Research/DWPose)
+
+    DWPose is required by `scripts/data_processors/dwpose/inference.py`. You need clone this repo to the specific directory `DWPose` by command below:
 
     ```shell
-    git submodule update
+    git clone https://github.com/IDEA-Research/DWPose.git DWPose
     ```
 
 ## Download models
