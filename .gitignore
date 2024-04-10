@@ -5,3 +5,6 @@ results/
 .vscode/
 .hypothesis/
 __pycache__/
+
+# poetry stuff
+poetry.lock
