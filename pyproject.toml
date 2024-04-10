@@ -26,6 +26,7 @@ xformers = { version = "^0.0.25.post1", source = "pytorch-cu121" }
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"
+isort = "^5.13.2"
 
 
 [[tool.poetry.source]]

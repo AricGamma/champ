@@ -9,40 +9,21 @@ from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.loaders import UNet2DConditionLoadersMixin
 from diffusers.models.activations import get_activation
 from diffusers.models.attention_processor import (
-    ADDED_KV_ATTENTION_PROCESSORS,
-    CROSS_ATTENTION_PROCESSORS,
-    AttentionProcessor,
-    AttnAddedKVProcessor,
-    AttnProcessor,
-)
-from diffusers.models.embeddings import (
-    GaussianFourierProjection,
-    ImageHintTimeEmbedding,
-    ImageProjection,
-    ImageTimeEmbedding,
-    PositionNet,
-    TextImageProjection,
-    TextImageTimeEmbedding,
-    TextTimeEmbedding,
-    TimestepEmbedding,
-    Timesteps,
-)
+    ADDED_KV_ATTENTION_PROCESSORS, CROSS_ATTENTION_PROCESSORS,
+    AttentionProcessor, AttnAddedKVProcessor, AttnProcessor)
+from diffusers.models.embeddings import (GaussianFourierProjection,
+                                         ImageHintTimeEmbedding,
+                                         ImageProjection, ImageTimeEmbedding,
+                                         PositionNet, TextImageProjection,
+                                         TextImageTimeEmbedding,
+                                         TextTimeEmbedding, TimestepEmbedding,
+                                         Timesteps)
 from diffusers.models.modeling_utils import ModelMixin
-from diffusers.utils import (
-    USE_PEFT_BACKEND,
-    BaseOutput,
-    deprecate,
-    logging,
-    scale_lora_layers,
-    unscale_lora_layers,
-)
+from diffusers.utils import (USE_PEFT_BACKEND, BaseOutput, deprecate, logging,
+                             scale_lora_layers, unscale_lora_layers)
 
-from .unet_2d_blocks import (
-    UNetMidBlock2D,
-    UNetMidBlock2DCrossAttn,
-    get_down_block,
-    get_up_block,
-)
+from .unet_2d_blocks import (UNetMidBlock2D, UNetMidBlock2DCrossAttn,
+                             get_down_block, get_up_block)
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 

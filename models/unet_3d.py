@@ -13,11 +13,13 @@ from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.models.attention_processor import AttentionProcessor
 from diffusers.models.embeddings import TimestepEmbedding, Timesteps
 from diffusers.models.modeling_utils import ModelMixin
-from diffusers.utils import SAFETENSORS_WEIGHTS_NAME, WEIGHTS_NAME, BaseOutput, logging
+from diffusers.utils import (SAFETENSORS_WEIGHTS_NAME, WEIGHTS_NAME,
+                             BaseOutput, logging)
 from safetensors.torch import load_file
 
 from .resnet import InflatedConv3d, InflatedGroupNorm
-from .unet_3d_blocks import UNetMidBlock3DCrossAttn, get_down_block, get_up_block
+from .unet_3d_blocks import (UNetMidBlock3DCrossAttn, get_down_block,
+                             get_up_block)
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
