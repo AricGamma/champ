@@ -3,7 +3,7 @@ name: Pylint
 on: [push, pull_request]
 
 jobs:
-  test:
+  static-check:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
