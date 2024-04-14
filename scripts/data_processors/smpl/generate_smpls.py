@@ -21,6 +21,10 @@ from hmr2.datasets.vitdet_dataset import ViTDetDataset
 from hmr2.utils.renderer import Renderer, cam_crop_to_full
 from .smpl_visualizer import SemanticRenderer
 
+if os.name == "nt":
+    os.environ.pop("PYOPENGL_PLATFORM")
+
+
 LIGHT_BLUE = (0.65098039, 0.74117647, 0.85882353)
 
 def predict_smpl(batch, model, model_cfg, figure_scale=None):

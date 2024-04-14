@@ -1,4 +1,8 @@
 import os
+
+if os.name == "nt":
+    os.environ.setdefault("HOME", os.environ.get("USERPROFILE"))
+
 from pathlib import Path
 from hmr2.models import CACHE_DIR_4DHUMANS
 
