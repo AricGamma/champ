@@ -2,6 +2,7 @@ accelerate==0.21.0
 controlnet-aux==0.0.7
 diffusers==0.24.0
 einops==0.4.1
+gradio==4.26.0
 imageio==2.33.0
 imageio[ffmpeg]
 matplotlib==3.8.3

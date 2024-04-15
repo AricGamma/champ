@@ -79,7 +79,7 @@ def combine_guidance_data(cfg):
         guidance_image_lst = (
             guidance_image_lst
             if not cfg.data.frame_range
-            else guidance_image_lst[cfg.data.frame_range[0], cfg.data.frame_range[1]]
+            else guidance_image_lst[cfg.data.frame_range[0]:cfg.data.frame_range[1]]
         )
 
         for guidance_image_path in guidance_image_lst:
@@ -154,22 +154,11 @@ def inference(
 
     return video
 
+def get_weight_dtype(cfg):
+    return torch.float16 if cfg.weight_dtype == "fp16" else torch.float32
 
-def main(cfg):
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        datefmt="%m/%d/%Y %H:%M:%S",
-        level=logging.INFO,
-    )
-
-    save_dir = setup_savedir(cfg)
-    logging.info(f"Running inference ...")
-
-    # setup pretrained models
-    if cfg.weight_dtype == "fp16":
-        weight_dtype = torch.float16
-    else:
-        weight_dtype = torch.float32
+def setup_pretrained_models(cfg):
+    weight_dtype = get_weight_dtype(cfg)
 
     sched_kwargs = OmegaConf.to_container(cfg.noise_scheduler_kwargs)
     if cfg.enable_zero_snr:
@@ -257,6 +246,23 @@ def main(cfg):
             raise ValueError(
                 "xformers is not available. Make sure it is installed correctly"
             )
+
+    return (noise_scheduler, image_enc, vae, model)
+
+
+def main(cfg):
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        level=logging.INFO,
+    )
+
+    save_dir = setup_savedir(cfg)
+    logging.info(f"Running inference ...")
+
+    weight_dtype = get_weight_dtype(cfg)
+
+    (noise_scheduler, image_enc, vae, model) = setup_pretrained_models(cfg)
 
     ref_image_path = cfg.data.ref_image_path
     ref_image_pil = Image.open(ref_image_path)
