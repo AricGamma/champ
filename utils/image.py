@@ -1,11 +1,12 @@
 import os
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
 
 
 def stich_images(
-    images: list[Image.Image | str],
+    images: list[Image.Image | str | Path],
     width: int = None,
     height: int = None,
     row: int = None,
@@ -33,9 +34,9 @@ def stich_images(
     col_index = 0
     for img_row in image_grid:
         for img in img_row:
-            if not isinstance(img, (str, Image.Image)):
+            if not isinstance(img, (str, Path, Image.Image)):
                 raise ValueError("Item is not a Pillow image or path")
-            if isinstance(img, str):
+            if isinstance(img, (str, Path)):
                 if not os.path.exists(img):
                     raise ValueError(f"Cannot open file. {img}")
                 img = Image.open(img)
