@@ -1,4 +1,6 @@
 import os
+from typing import Generator
+import cv2
 import numpy as np
 import torch
 import torchvision
@@ -76,3 +78,37 @@ def pil_list_to_tensor(image_list, size=None):
     stacked_tensor = torch.stack(tensor_list, dim=0)
     tensor = stacked_tensor.permute(1, 0, 2, 3)
     return tensor
+
+def frames_to_video(images: Generator[Image.Image | str, None, None], output: str, fps=30.0):
+    """image frames to video
+
+    Args:
+        images (list[Image.Image  |  str]): image frames
+        output (str): output file path, must end with .mp4
+        fps (int, optional): fps. Defaults to 30.
+
+    Raises:
+        ValueError: If images is empty
+    """
+    fourcc = cv2.VideoWriter.fourcc(*"mp4v")
+    video: cv2.VideoWriter = None
+    width = 0
+    height = 0
+
+    for img in images:
+        if isinstance(img, str):
+            img = cv2.imread(img)
+
+        if isinstance(img, Image.Image):
+            img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+
+        # use first image size as determine video frame size
+        if not width and not height:
+            height, width, _ = img.shape
+
+        if not video:
+            video = cv2.VideoWriter(output, fourcc, fps, (width, height))
+
+        video.write(img)
+
+    video.release()
