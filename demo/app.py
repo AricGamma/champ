@@ -1,8 +1,10 @@
 # pylint: disable=wrong-import-position
 # pylint: disable=no-member
 
+import gc
 import logging
 import os
+import sys
 import uuid
 from pathlib import Path
 
@@ -10,7 +12,9 @@ import gradio as gr
 
 from omegaconf import OmegaConf
 from PIL import Image
+import torch
 
+sys.path.append(str(Path(__file__).parent.parent))
 from inference import (combine_guidance_data, get_weight_dtype,
                              inference, resize_tensor_frames, save_videos_grid,
                              setup_pretrained_models)
@@ -36,10 +40,27 @@ class InferenceService:
         self.cfg = OmegaConf.load(self.config_path)
 
     def setup_models(self):
-        self.weight_dtype = get_weight_dtype(self.cfg)
+        if self.weight_dtype is None:
+            self.weight_dtype = get_weight_dtype(self.cfg)
 
-        logging.info("setup pretrained models...")
-        (self.noise_scheduler, self.image_enc, self.vae, self.model) = setup_pretrained_models(self.cfg)
+        if (
+            self.noise_scheduler is None
+            and self.image_enc is None
+            and self.vae is None
+            and self.model is None
+        ):
+            logging.info("setup pretrained models...")
+            (self.noise_scheduler, self.image_enc, self.vae, self.model) = setup_pretrained_models(self.cfg)
+
+    def gc(self):
+        self.noise_scheduler = None
+        self.image_enc = None
+        self.vae = None
+        self.model = None
+
+        gc.collect()
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
     def inference(self, ref_img: Image, driving_motion: str, session_id: str, frame_start: int, frame_end: int):
         if not ref_img:
@@ -53,37 +74,40 @@ class InferenceService:
 
         self.setup_models()
 
-        ref_image_w, ref_image_h = ref_img.size
+        try:
+            ref_image_w, ref_image_h = ref_img.size
 
-        motion_path = self.motions_path / driving_motion
-        cfg = OmegaConf.load(self.config_path)
-        cfg.data.guidance_data_folder = motion_path
+            motion_path = self.motions_path / driving_motion
+            cfg = OmegaConf.load(self.config_path)
+            cfg.data.guidance_data_folder = motion_path
 
-        cfg.data.frame_range = [frame_start, frame_end]
+            cfg.data.frame_range = [frame_start, frame_end]
 
-        guidance_pil_group, video_length = combine_guidance_data(cfg)
+            guidance_pil_group, video_length = combine_guidance_data(cfg)
 
-        result_video_tensor = inference(
-            cfg=cfg,
-            vae=self.vae,
-            image_enc=self.image_enc,
-            model=self.model,
-            scheduler=self.noise_scheduler,
-            ref_image_pil=ref_img,
-            guidance_pil_group=guidance_pil_group,
-            video_length=video_length,
-            width=cfg.width,
-            height=cfg.height,
-            device="cuda",
-            dtype=self.weight_dtype,
-        )
+            result_video_tensor = inference(
+                cfg=cfg,
+                vae=self.vae,
+                image_enc=self.image_enc,
+                model=self.model,
+                scheduler=self.noise_scheduler,
+                ref_image_pil=ref_img,
+                guidance_pil_group=guidance_pil_group,
+                video_length=video_length,
+                width=cfg.width,
+                height=cfg.height,
+                device="cuda",
+                dtype=self.weight_dtype,
+            )
 
-        result_video_tensor = resize_tensor_frames(
-            result_video_tensor, (ref_image_h, ref_image_w)
-        )
-        saved_video_path = self.get_inference_path(session_id)
-        save_videos_grid(result_video_tensor, saved_video_path)
-        return saved_video_path
+            result_video_tensor = resize_tensor_frames(
+                result_video_tensor, (ref_image_h, ref_image_w)
+            )
+            saved_video_path = self.get_inference_path(session_id)
+            save_videos_grid(result_video_tensor, saved_video_path)
+            return saved_video_path
+        finally:
+            self.gc()
 
     def render_guidance_video(self, motion: str):
         return self.motions_path / motion / "motion_grid.mp4"
@@ -92,7 +116,7 @@ class InferenceService:
         return f"{CACHE_DIR}/inference/{session_id}.mp4"
 
     def get_motion_frame_count(self, motion: str):
-        p = self.config_path / motion
+        p = self.motions_path / motion
         return len(os.listdir(p / "depth"))
 
     def clean_cache(self, session_id: str):
