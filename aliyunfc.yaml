@@ -1,0 +1,19 @@
+edition: 1.0.0
+name: my-framework-app
+access: default
+services:
+  framework:
+    component: fc
+    props:
+      region: cn-hangzhou
+      service:
+        name: serverless-devs-application
+      function:
+        name: champ
+        description: Initialize
+        runtime: python3.10
+        memorySize: 16384
+        cpu: 4
+        timeout: 60
+        codeUri: ./
+        diskSize: 10240
