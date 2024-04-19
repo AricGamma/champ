@@ -17,12 +17,6 @@ from inference import (combine_guidance_data, get_weight_dtype,
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s: [%(levelname)s] [%(funcName)s] - %(message)s")
 
-INFERENCE_CONFIG_PATH = Path(__file__).parent.parent / "configs" / "inference" / "inference.yaml"
-
-MOTION_PATH = Path(__file__).parent.parent / "example_data" / "motions"
-
-motions = sorted(os.listdir(MOTION_PATH))
-
 CACHE_DIR = Path(__file__).parent.parent / "results"
 
 CACHE_INFERENCE_DIR = CACHE_DIR / "inference"
@@ -31,13 +25,15 @@ os.makedirs(CACHE_INFERENCE_DIR, exist_ok=True)
 
 
 class InferenceService:
-    def __init__(self):
+    def __init__(self, config_path: str, motions_path: str):
+        self.config_path = config_path
+        self.motions_path = motions_path
         self.noise_scheduler = None
         self.image_enc = None
         self.vae = None
         self.model = None
         self.weight_dtype = None
-        self.cfg = OmegaConf.load(INFERENCE_CONFIG_PATH)
+        self.cfg = OmegaConf.load(self.config_path)
 
     def setup_models(self):
         self.weight_dtype = get_weight_dtype(self.cfg)
@@ -59,8 +55,8 @@ class InferenceService:
 
         ref_image_w, ref_image_h = ref_img.size
 
-        motion_path = MOTION_PATH / driving_motion
-        cfg = OmegaConf.load(INFERENCE_CONFIG_PATH)
+        motion_path = self.motions_path / driving_motion
+        cfg = OmegaConf.load(self.config_path)
         cfg.data.guidance_data_folder = motion_path
 
         cfg.data.frame_range = [frame_start, frame_end]
@@ -90,13 +86,13 @@ class InferenceService:
         return saved_video_path
 
     def render_guidance_video(self, motion: str):
-        return MOTION_PATH / motion / "motion_grid.mp4"
+        return self.motions_path / motion / "motion_grid.mp4"
 
     def get_inference_path(self, session_id: str):
         return f"{CACHE_DIR}/inference/{session_id}.mp4"
 
     def get_motion_frame_count(self, motion: str):
-        p = MOTION_PATH / motion
+        p = self.config_path / motion
         return len(os.listdir(p / "depth"))
 
     def clean_cache(self, session_id: str):
@@ -105,9 +101,9 @@ class InferenceService:
             os.remove(self.get_inference_path(session_id))
         print(f"{session_id} cleaned")
 
-service = InferenceService()
 
-def launch():
+def launch(config_path: str, motions_path: str):
+    service = InferenceService(config_path, motions_path)
     with gr.Blocks(delete_cache=(86400, 86400)) as app:
         session_id = gr.State(str(uuid.uuid4()))
 
@@ -116,7 +112,7 @@ def launch():
                 ref_img_component = gr.Image(type="pil", height=405, label="Reference Image")
                 with gr.Column():
                     with gr.Row():
-                        guidance_path_component = gr.Dropdown(choices=motions, type="value", label="Select a Motion")
+                        guidance_path_component = gr.Dropdown(choices=sorted(os.listdir(motions_path)), type="value", label="Select a Motion")
                         frame_start = gr.Number(label="Frame start", value=0, interactive=True)
                         frame_end = gr.Number(label="Frame end", value=0, interactive=True)
                     guidance_preview = gr.Video(interactive=False, label="Preview Motion", height=300)
@@ -143,4 +139,6 @@ def launch():
     app.queue().launch()
 
 if __name__ == "__main__":
-    launch()
+    inference_config_path = Path(__file__).parent.parent / "configs" / "inference" / "inference.yaml"
+    inference_motions_path = Path(__file__).parent.parent / "example_data" / "motions"
+    launch(inference_config_path, inference_motions_path)
